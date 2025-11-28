@@ -1,0 +1,14 @@
+google-generativeai
+opencv-python
+numpy
+pandas
+matplotlib
+Pillow
+imageio
+tqdm
+flask
+requests
+python-dotenv
+ultralytics
+moviepy
+pyngrok

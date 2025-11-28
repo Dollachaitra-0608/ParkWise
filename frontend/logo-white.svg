@@ -1,0 +1,16 @@
+<!--?xml version="1.0" encoding="UTF-8"?-->
+<svg width="220" height="60" viewBox="0 0 220 60" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <rect x="0" y="0" width="220" height="60" rx="14" fill="#ffffff10"></rect>
+  
+  <rect x="18" y="10" width="40" height="40" rx="10" fill="#ffffff"></rect>
+  <path d="M35 21h6a6 6 0 0 1 0 12h-6v10h-4V21h4zm6 8a4 4 0 0 0 0-8h-6v8h6z" fill="#0d6efd"></path>
+
+  <rect x="66" y="12" width="1.5" height="36" rx="1" fill="#ffffff99"></rect>
+
+  <text x="80" y="25" fill="#ffffff" font-family="Inter,Segoe UI,Arial" font-size="20" font-weight="700">
+    ParkWise
+  </text>
+  <text x="80" y="42" fill="#ffffffb0" font-family="Inter,Segoe UI,Arial" font-size="13">
+    AI Parking Intelligence
+  </text>
+</svg>

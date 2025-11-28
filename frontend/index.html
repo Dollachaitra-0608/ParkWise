@@ -1,0 +1,379 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8"/>
+  <meta name="viewport" content="width=device-width,initial-scale=1"/>
+  <title>ParkWise – Smart Parking Dashboard</title>
+
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.1/dist/css/bootstrap.min.css" rel="stylesheet">
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.9.3/html2pdf.bundle.min.js"></script>
+  <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css" rel="stylesheet">
+
+  <style>
+    body {
+      background:white;
+      font-family:Inter,Segoe UI,Arial;
+      color:#222;
+    }
+
+    /* Header */
+    .topbar {
+      background:#0d6efd;
+      color:white;
+      padding:18px 20px;
+    }
+    .topbar h1 { margin:0; font-size:26px; font-weight:700; }
+    .topbar p { margin:0; font-size:13px; }
+
+    /* Layout */
+    .wrapper {
+      max-width:1200px;
+      margin:24px auto;
+      display:grid;
+      grid-template-columns:240px 1fr;
+      gap:20px;
+    }
+    @media(max-width:900px){ .wrapper { grid-template-columns:1fr; } }
+
+    /* Sidebar */
+    .sidebar {
+      background:#f8f9fa;
+      border-radius:12px;
+      padding:18px;
+      border:1px solid #ddd;
+    }
+    .nav-link { padding:10px; color:#444; border-radius:8px; font-weight:500; }
+    .nav-link:hover, .nav-link.active { background:#e9ecef; color:#000; }
+
+    .card-box {
+      background:white;
+      border-radius:12px;
+      border:1px solid #ddd;
+      padding:20px;
+      margin-bottom:20px;
+    }
+
+    /* Heatmap */
+    #heatmapGrid {
+      display:grid;
+      grid-template-columns:repeat(8,40px);
+      gap:6px;
+    }
+    .slot { width:40px; height:65px; border-radius:8px; }
+    .slot.free { background:#13ce66; }
+    .slot.occupied { background:#ff5757; }
+
+    /* Chat bubble */
+    .chat-bubble {
+      position:fixed;
+      bottom:22px;
+      right:22px;
+      background:#0d6efd;
+      color:white;
+      width:55px;
+      height:55px;
+      display:flex;
+      align-items:center;
+      justify-content:center;
+      border-radius:50%;
+      cursor:pointer;
+      font-size:22px;
+      box-shadow:0 8px 20px rgba(0,0,0,0.25);
+    }
+
+    /* Report History Table */
+    #reportTable td, #reportTable th {
+      padding:8px;
+      border-bottom:1px solid #eee;
+    }
+    #reportTable th {
+      font-weight:600;
+      background:#f8f9fa;
+    }
+
+  </style>
+</head>
+
+<body>
+
+  <!-- HEADER -->
+  <div class="topbar">
+    <h1>ParkWise</h1>
+    <p>AI Powered Parking Analytics & Simulation System</p>
+  </div>
+
+  <!-- MAIN LAYOUT -->
+  <div class="wrapper">
+
+    <!-- SIDEBAR -->
+    <aside class="sidebar">
+      <h6>Navigation</h6>
+      <nav class="nav flex-column mb-3">
+        <a class="nav-link active" href="#dashboard">Dashboard</a>
+        <a class="nav-link" href="#simulation">Simulation</a>
+        <a class="nav-link" href="#heatmapSection">Heatmap</a>
+        <a class="nav-link" href="#ai">AI Assistant</a>
+        <a class="nav-link" href="#reports">Reports</a>
+      </nav>
+
+      <h6>Status</h6>
+      <pre id="statusLog" style="font-size:13px; background:#f0f0f0; padding:10px; height:180px; overflow:auto;">
+No actions yet.
+      </pre>
+    </aside>
+
+    <!-- MAIN CONTENT -->
+    <main>
+
+      <!-- DASHBOARD -->
+      <section id="dashboard">
+        <div class="card-box">
+          <h3>Dashboard</h3>
+          <p>Overview of simulation output and system analytics.</p>
+        </div>
+      </section>
+
+      <!-- SIMULATION -->
+      <section id="simulation">
+        <div class="card-box">
+          <div class="d-flex justify-content-between">
+            <h4>Simulation</h4>
+            <div class="d-flex gap-2">
+              <button class="btn btn-success" onclick="runSimulation()">Run Simulation</button>
+              <button class="btn btn-outline-primary" id="csvBtn" disabled onclick="downloadCSV()">CSV</button>
+              <button class="btn btn-outline-primary" id="gifBtn" disabled onclick="downloadGIF()">GIF</button>
+              <button class="btn btn-outline-dark" id="pdfBtn" disabled onclick="downloadPDF()">PDF</button>
+            </div>
+          </div>
+
+          <div id="loaderArea" style="display:none;" class="mt-3">
+            <p>Running simulation…</p>
+            <div class="progress bg-light">
+              <div id="progressBar" class="progress-bar bg-primary" style="width:0%;"></div>
+            </div>
+          </div>
+
+          <div id="simulationOutput" class="mt-3"></div>
+        </div>
+      </section>
+
+      <!-- HEATMAP -->
+      <section id="heatmapSection">
+        <div class="card-box">
+          <h4>Heatmap</h4>
+          <p>Green = Free | Red = Occupied</p>
+          <div id="heatmapGrid"></div>
+
+          <div class="card-box mt-3">
+            <h5>AI Insights</h5>
+            <p id="insightBox">Run simulation to generate insights.</p>
+          </div>
+        </div>
+      </section>
+
+      <!-- AI ASSISTANT -->
+      <section id="ai">
+        <div class="card-box">
+          <h4>AI Assistant</h4>
+          <textarea id="aiQ" class="form-control mb-2" rows="2" placeholder="Ask something…"></textarea>
+          <button class="btn btn-primary" onclick="askAI()">Ask</button>
+          <div id="aiA" class="mt-3" style="background:#f8f9fa; padding:14px; border-radius:8px; min-height:40px;"></div>
+        </div>
+      </section>
+
+      <!-- REPORTS -->
+      <section id="reports">
+        <div class="card-box">
+          <h4>Reports</h4>
+          <p>Generate PDF or download simulation logs.</p>
+
+          <!-- TABLE -->
+          <table class="table" id="reportTable">
+            <thead>
+              <tr>
+                <th>Type</th>
+                <th>Timestamp</th>
+                <th>Action</th>
+              </tr>
+            </thead>
+            <tbody id="reportBody">
+              <tr>
+                <td colspan="3" class="text-muted">No reports generated yet.</td>
+              </tr>
+            </tbody>
+          </table>
+
+          <button class="btn btn-danger mt-2" onclick="clearHistory()">Clear History</button>
+        </div>
+      </section>
+
+    </main>
+  </div>
+
+  <!-- CHAT BUBBLE -->
+  <div class="chat-bubble" onclick="openChat()">
+    <i class="fa-solid fa-robot"></i>
+  </div>
+
+  <!-- CHAT MODAL -->
+  <div class="modal fade" id="chatModal">
+    <div class="modal-dialog modal-dialog-centered">
+      <div class="modal-content">
+        <div class="modal-header">
+          <h5 class="modal-title">ParkWise Chat</h5>
+          <button class="btn-close" data-bs-dismiss="modal"></button>
+        </div>
+        <div class="modal-body">
+          <pre id="chatLog" style="height:200px; background:#f7f7f7; padding:10px;"></pre>
+          <textarea id="chatInput" class="form-control mt-2" placeholder="Ask something…"></textarea>
+        </div>
+        <div class="modal-footer">
+          <button class="btn btn-primary" onclick="chatSend()">Send</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- SCRIPTS -->
+  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.1/dist/js/bootstrap.bundle.min.js"></script>
+
+  <script>
+    let simData=null;
+
+    function log(msg){
+      const el=document.getElementById("statusLog");
+      el.textContent=msg+"\n"+el.textContent;
+    }
+
+    /* ---------------- Simulation ---------------- */
+
+    async function runSimulation(){
+      document.getElementById("loaderArea").style.display="block";
+      document.getElementById("progressBar").style.width="30%";
+
+      try{
+        const r=await fetch("/run-simulation");
+        const j=await r.json();
+        if(j.status!=="success") throw new Error(j.message);
+
+        simData=j;
+
+        document.getElementById("csvBtn").disabled=false;
+        document.getElementById("gifBtn").disabled=false;
+        document.getElementById("pdfBtn").disabled=false;
+
+        document.getElementById("simulationOutput").innerHTML=
+          `<img src="${j.gif_url}" class="img-fluid rounded mt-3">`;
+
+        renderHeatmap(j.occupancy_summary);
+        renderInsights(j.occupancy_summary);
+
+        document.getElementById("progressBar").style.width="100%";
+        setTimeout(()=>document.getElementById("loaderArea").style.display="none",600);
+
+        log("Simulation completed.");
+      }
+      catch(e){
+        alert("Simulation failed: "+e.message);
+        log("Error: "+e.message);
+        document.getElementById("loaderArea").style.display="none";
+      }
+    }
+
+    function renderHeatmap(frames){
+      const d=frames[frames.length-1].detections;
+      const g=document.getElementById("heatmapGrid");
+      g.innerHTML="";
+      d.forEach(x=>{
+        const div=document.createElement("div");
+        div.className="slot "+(x===1?"occupied":"free");
+        g.appendChild(div);
+      });
+    }
+
+    function renderInsights(frames){
+      const vals=frames.map(f=>f.occupied);
+      const avg=Math.round(vals.reduce((a,b)=>a+b,0)/vals.length);
+      const max=Math.max(...vals);
+      const min=Math.min(...vals);
+      document.getElementById("insightBox").innerText=
+        `Average: ${avg}\nPeak: ${max}\nMin: ${min}`;
+    }
+
+    /* ---------------- Report History ---------------- */
+
+    function addHistory(type, link){
+      const body=document.getElementById("reportBody");
+
+      if(body.children[0].textContent.includes("No reports")){
+        body.innerHTML="";
+      }
+
+      const tr=document.createElement("tr");
+
+      const icon = type==="PDF" ? "fa-file-pdf text-danger"
+                 : type==="CSV" ? "fa-file-csv text-success"
+                 : "fa-film text-primary";
+
+      tr.innerHTML = `
+        <td><i class="fa-solid ${icon}"></i> ${type}</td>
+        <td>${new Date().toLocaleString()}</td>
+        <td><a href="${link}" target="_blank">Download</a></td>
+      `;
+
+      body.prepend(tr);
+    }
+
+    function clearHistory(){
+      const body=document.getElementById("reportBody");
+      body.innerHTML=`<tr><td colspan="3" class="text-muted">No reports generated yet.</td></tr>`;
+    }
+
+    /* ---------------- Downloads ---------------- */
+
+    function downloadCSV(){
+      window.open(simData.csv_url);
+      addHistory("CSV", simData.csv_url);
+    }
+
+    function downloadGIF(){
+      window.open(simData.gif_url);
+      addHistory("GIF", simData.gif_url);
+    }
+
+    function downloadPDF(){
+      const el=document.createElement("div");
+      el.innerHTML=`<h2>ParkWise Report</h2><pre>${document.getElementById("insightBox").innerText}</pre>`;
+      html2pdf().from(el).save("ParkWise_Report.pdf");
+      addHistory("PDF", "#");
+    }
+
+    /* ---------------- AI Assistant ---------------- */
+
+    async function askAI(){
+      const q=document.getElementById("aiQ").value;
+      const r=await fetch("/parking-ai",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({question:q})});
+      const j=await r.json();
+      document.getElementById("aiA").innerText=j.response;
+    }
+
+    /* ---------------- Chat Modal ---------------- */
+
+    function openChat(){
+      new bootstrap.Modal(document.getElementById("chatModal")).show();
+    }
+
+    async function chatSend(){
+      const q=document.getElementById("chatInput").value;
+      const log=document.getElementById("chatLog");
+      log.textContent+="You: "+q+"\n";
+      const r=await fetch("/parking-ai",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({question:q})});
+      const j=await r.json();
+      log.textContent+="AI: "+j.response+"\n\n";
+      document.getElementById("chatInput").value="";
+    }
+  </script>
+
+</body>
+</html>
