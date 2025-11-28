@@ -4,6 +4,8 @@ import os
 import random
 import logging
 from datetime import datetime
+import base64
+from io import BytesIO
 
 import numpy as np
 import cv2
@@ -186,14 +188,20 @@ class ReportingAgent(AgentBase):
         pd.DataFrame(rows).to_csv(csv_path, index=False)
 
         # Save GIF into STATIC folder
-        gif_path = os.path.join(static_dir, "annotated.gif")
+        # Generate in-memory GIF
+        gif_bytes = BytesIO()
         try:
             imgs = [imageio.imread(p) for p in annotated]
-            imageio.mimsave(gif_path, imgs, fps=2)
+            imageio.mimsave(gif_bytes, imgs, format='GIF', fps=2)
+            gif_bytes.seek(0)
+            gif_base64 = base64.b64encode(gif_bytes.read()).decode('utf-8')
+            gif_url = "data:image/gif;base64," + gif_base64
         except Exception as e:
             print("GIF generation error:", e)
+            gif_url = ""
+            
+        return {"csv": csv_path, "gif": gif_url, "df": pd.DataFrame(rows)}
 
-        return {"csv": csv_path, "gif": gif_path, "df": pd.DataFrame(rows)}
 
 # -------------------------
 # Full Pipeline
@@ -316,7 +324,7 @@ def run_sim():
 
         return jsonify({
             "status":"success",
-            "gif_url":"/static/sim_output/annotated.gif",
+            "gif_url": report["gif"],
             "csv_url":"/static/sim_output/detections.csv",
             "occupancy_summary":frames
         })
