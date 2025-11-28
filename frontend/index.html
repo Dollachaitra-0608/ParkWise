@@ -17,7 +17,6 @@
       color:#222;
     }
 
-    /* Header */
     .topbar {
       background:#0d6efd;
       color:white;
@@ -26,7 +25,6 @@
     .topbar h1 { margin:0; font-size:26px; font-weight:700; }
     .topbar p { margin:0; font-size:13px; }
 
-    /* Layout */
     .wrapper {
       max-width:1200px;
       margin:24px auto;
@@ -36,13 +34,13 @@
     }
     @media(max-width:900px){ .wrapper { grid-template-columns:1fr; } }
 
-    /* Sidebar */
     .sidebar {
       background:#f8f9fa;
       border-radius:12px;
       padding:18px;
       border:1px solid #ddd;
     }
+
     .nav-link { padding:10px; color:#444; border-radius:8px; font-weight:500; }
     .nav-link:hover, .nav-link.active { background:#e9ecef; color:#000; }
 
@@ -54,7 +52,6 @@
       margin-bottom:20px;
     }
 
-    /* Heatmap */
     #heatmapGrid {
       display:grid;
       grid-template-columns:repeat(8,40px);
@@ -64,7 +61,6 @@
     .slot.free { background:#13ce66; }
     .slot.occupied { background:#ff5757; }
 
-    /* Chat bubble */
     .chat-bubble {
       position:fixed;
       bottom:22px;
@@ -82,7 +78,6 @@
       box-shadow:0 8px 20px rgba(0,0,0,0.25);
     }
 
-    /* Report History Table */
     #reportTable td, #reportTable th {
       padding:8px;
       border-bottom:1px solid #eee;
@@ -97,16 +92,13 @@
 
 <body>
 
-  <!-- HEADER -->
   <div class="topbar">
     <h1>ParkWise</h1>
     <p>AI Powered Parking Analytics & Simulation System</p>
   </div>
 
-  <!-- MAIN LAYOUT -->
   <div class="wrapper">
 
-    <!-- SIDEBAR -->
     <aside class="sidebar">
       <h6>Navigation</h6>
       <nav class="nav flex-column mb-3">
@@ -123,10 +115,9 @@ No actions yet.
       </pre>
     </aside>
 
-    <!-- MAIN CONTENT -->
     <main>
 
-      <!-- DASHBOARD -->
+      <!-- Dashboard -->
       <section id="dashboard">
         <div class="card-box">
           <h3>Dashboard</h3>
@@ -134,7 +125,7 @@ No actions yet.
         </div>
       </section>
 
-      <!-- SIMULATION -->
+      <!-- Simulation -->
       <section id="simulation">
         <div class="card-box">
           <div class="d-flex justify-content-between">
@@ -158,7 +149,7 @@ No actions yet.
         </div>
       </section>
 
-      <!-- HEATMAP -->
+      <!-- Heatmap -->
       <section id="heatmapSection">
         <div class="card-box">
           <h4>Heatmap</h4>
@@ -172,7 +163,7 @@ No actions yet.
         </div>
       </section>
 
-      <!-- AI ASSISTANT -->
+      <!-- AI -->
       <section id="ai">
         <div class="card-box">
           <h4>AI Assistant</h4>
@@ -182,25 +173,18 @@ No actions yet.
         </div>
       </section>
 
-      <!-- REPORTS -->
+      <!-- Reports -->
       <section id="reports">
         <div class="card-box">
           <h4>Reports</h4>
           <p>Generate PDF or download simulation logs.</p>
 
-          <!-- TABLE -->
           <table class="table" id="reportTable">
             <thead>
-              <tr>
-                <th>Type</th>
-                <th>Timestamp</th>
-                <th>Action</th>
-              </tr>
+              <tr><th>Type</th><th>Timestamp</th><th>Action</th></tr>
             </thead>
             <tbody id="reportBody">
-              <tr>
-                <td colspan="3" class="text-muted">No reports generated yet.</td>
-              </tr>
+              <tr><td colspan="3" class="text-muted">No reports generated yet.</td></tr>
             </tbody>
           </table>
 
@@ -211,12 +195,10 @@ No actions yet.
     </main>
   </div>
 
-  <!-- CHAT BUBBLE -->
   <div class="chat-bubble" onclick="openChat()">
     <i class="fa-solid fa-robot"></i>
   </div>
 
-  <!-- CHAT MODAL -->
   <div class="modal fade" id="chatModal">
     <div class="modal-dialog modal-dialog-centered">
       <div class="modal-content">
@@ -235,10 +217,11 @@ No actions yet.
     </div>
   </div>
 
-  <!-- SCRIPTS -->
+  <!-- Scripts -->
   <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.1/dist/js/bootstrap.bundle.min.js"></script>
 
   <script>
+
     let simData=null;
 
     function log(msg){
@@ -263,8 +246,11 @@ No actions yet.
         document.getElementById("gifBtn").disabled=false;
         document.getElementById("pdfBtn").disabled=false;
 
-        document.getElementById("simulationOutput").innerHTML=
-          `<img src="${j.gif_url}" class="img-fluid rounded mt-3">`;
+        // ⭐ FIXED GIF DISPLAY
+        document.getElementById("simulationOutput").innerHTML =
+          `<img id="simGIF" class="img-fluid rounded mt-3">`;
+
+        document.getElementById("simGIF").src = j.gif_url;
 
         renderHeatmap(j.occupancy_summary);
         renderInsights(j.occupancy_summary);
@@ -373,6 +359,7 @@ No actions yet.
       log.textContent+="AI: "+j.response+"\n\n";
       document.getElementById("chatInput").value="";
     }
+
   </script>
 
 </body>
