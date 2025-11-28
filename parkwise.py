@@ -151,7 +151,6 @@ class ReportingAgent(AgentBase):
         if img is None:
             return frame_path
 
-        # Draw boxes
         for i, (x1, y1, x2, y2) in enumerate(self.slots):
             color = (0,255,0) if detections[i] == 0 else (0,0,255)
             cv2.rectangle(img, (x1, y1), (x2, y2), color, 3)
@@ -164,6 +163,10 @@ class ReportingAgent(AgentBase):
         rows = []
         annotated = []
 
+        # Create STATIC output folder for Render
+        static_dir = os.path.join("static", "sim_output")
+        os.makedirs(static_dir, exist_ok=True)
+
         for r in results:
             frame_path = r["frame"]
             detections = r["detections"]
@@ -174,25 +177,23 @@ class ReportingAgent(AgentBase):
                 "detections": detections
             })
 
-            # FIX: annotate the frame and append to gif list
+            # Annotate frame and save it
             annotated_frame = self.annotate(frame_path, detections)
             annotated.append(annotated_frame)
 
-        # Save CSV
-        df = pd.DataFrame(rows)
-        csv_path = os.path.join(self.out_folder, "detections.csv")
-        df.to_csv(csv_path, index=False)
+        # Save CSV into STATIC folder
+        csv_path = os.path.join(static_dir, "detections.csv")
+        pd.DataFrame(rows).to_csv(csv_path, index=False)
 
-        # FIX: generate animated GIF correctly
-        gif_path = os.path.join(self.out_folder, "annotated.gif")
+        # Save GIF into STATIC folder
+        gif_path = os.path.join(static_dir, "annotated.gif")
         try:
             imgs = [imageio.imread(p) for p in annotated]
             imageio.mimsave(gif_path, imgs, fps=2)
         except Exception as e:
             print("GIF generation error:", e)
 
-        return {"csv": csv_path, "gif": gif_path, "df": df}
-
+        return {"csv": csv_path, "gif": gif_path, "df": pd.DataFrame(rows)}
 
 # -------------------------
 # Full Pipeline
@@ -315,20 +316,14 @@ def run_sim():
 
         return jsonify({
             "status":"success",
-            "gif_url":"/simulation_output/annotated.gif",
-            "csv_url":"/simulation_output/detections.csv",
+            "gif_url":"/static/sim_output/annotated.gif",
+            "csv_url":"/static/sim_output/detections.csv",
             "occupancy_summary":frames
         })
 
     except Exception as e:
         logging.exception("Simulation failed:")
         return jsonify({"status":"error", "message":str(e)})
-
-@app.route("/simulation_output/<path:filename>")
-def files(filename):
-    directory = os.path.join(os.getcwd(), "simulation_output")
-    return send_from_directory(directory, filename)
-
 
 @app.route("/parking-ai", methods=["POST"])
 def parking_ai():
