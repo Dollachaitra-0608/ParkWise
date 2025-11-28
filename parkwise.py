@@ -146,7 +146,11 @@ class ReportingAgent(AgentBase):
         self.slots = slots
         self.out_folder = out_folder
         self.annotated_folder = annotated_folder
-        os.makedirs(annotated_folder, exist_ok=True)
+
+        # STATIC DIRECTORY FOR RENDER
+        self.static_dir = os.path.join("static", "sim_output")
+        os.makedirs(self.static_dir, exist_ok=True)
+        os.makedirs(self.annotated_folder, exist_ok=True)
 
     def annotate(self, frame_path, detections):
         img = cv2.imread(frame_path)
@@ -155,7 +159,7 @@ class ReportingAgent(AgentBase):
 
         for i, (x1, y1, x2, y2) in enumerate(self.slots):
             color = (0,255,0) if detections[i] == 0 else (0,0,255)
-            cv2.rectangle(img, (x1, y1), (x2, y2), color, 3)
+            cv2.rectangle(img, (x1,y1), (x2,y2), color, 3)
 
         outpath = os.path.join(self.annotated_folder, os.path.basename(frame_path))
         cv2.imwrite(outpath, img)
@@ -165,10 +169,7 @@ class ReportingAgent(AgentBase):
         rows = []
         annotated = []
 
-        # Create STATIC output folder for Render
-        static_dir = os.path.join("static", "sim_output")
-        os.makedirs(static_dir, exist_ok=True)
-
+        # Create CSV
         for r in results:
             frame_path = r["frame"]
             detections = r["detections"]
@@ -179,29 +180,26 @@ class ReportingAgent(AgentBase):
                 "detections": detections
             })
 
-            # Annotate frame and save it
             annotated_frame = self.annotate(frame_path, detections)
             annotated.append(annotated_frame)
 
-        # Save CSV into STATIC folder
-        csv_path = os.path.join(static_dir, "detections.csv")
+        # Save CSV in static folder
+        csv_path = os.path.join(self.static_dir, "detections.csv")
         pd.DataFrame(rows).to_csv(csv_path, index=False)
 
-        # Save GIF into STATIC folder
-        # Generate in-memory GIF
-        gif_bytes = BytesIO()
+        # SAVE GIF TO STATIC DIRECTORY
+        gif_path = os.path.join(self.static_dir, "annotated.gif")
         try:
             imgs = [imageio.imread(p) for p in annotated]
-            imageio.mimsave(gif_bytes, imgs, format='GIF', fps=2)
-            gif_bytes.seek(0)
-            gif_base64 = base64.b64encode(gif_bytes.read()).decode('utf-8')
-            gif_url = "data:image/gif;base64," + gif_base64
+            imageio.mimsave(gif_path, imgs, fps=2)
         except Exception as e:
-            print("GIF generation error:", e)
-            gif_url = ""
-            
-        return {"csv": csv_path, "gif": gif_url, "df": pd.DataFrame(rows)}
+            print("GIF error:", e)
 
+        return {
+            "csv": csv_path,
+            "gif": gif_path,   # IMPORTANT: actual file path
+            "df": pd.DataFrame(rows)
+        }
 
 # -------------------------
 # Full Pipeline
@@ -323,10 +321,10 @@ def run_sim():
         }
 
         return jsonify({
-            "status":"success",
-            "gif_url": report["gif"],
-            "csv_url":"/static/sim_output/detections.csv",
-            "occupancy_summary":frames
+            "status": "success",
+            "gif_url": "/static/sim_output/annotated.gif",
+            "csv_url": "/static/sim_output/detections.csv",
+            "occupancy_summary": frames
         })
 
     except Exception as e:
